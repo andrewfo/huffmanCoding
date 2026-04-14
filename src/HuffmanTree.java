@@ -36,6 +36,19 @@ public class HuffmanTree implements IHuffConstants {
         }
     }
 
+    public int getFlattenedSize() {
+        return getFlattenedSizeHelper(root);
+    }
+
+    private int getFlattenedSizeHelper(TreeNode node) {
+        if (node.isLeaf()) {
+            return 10;
+        } else {
+            return 1 + getFlattenedSizeHelper(node.getLeft())
+                    + getFlattenedSizeHelper(node.getRight());
+        }
+    }
+
     public String getCode(int value) {
         if (value < 0 || value >= codings.length) {
             return null;

@@ -72,9 +72,9 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         if (headerFormat == STORE_COUNTS) {
             headerSize = ALPH_SIZE * BITS_PER_INT;
         } else if (headerFormat == STORE_TREE) {
-            headerSize = BITS_PER_INT; // + flattened tree bits(count # of internal nodes + leaves)
-            // implement in huffmantree class
+            headerSize = BITS_PER_INT + huffTree.getFlattenedSize();
         } else {
+            bits.close();
             throw new IllegalArgumentException("cant calculate header size with STORE_CUSTOM");
         }
 
@@ -86,8 +86,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         }
         encodedSize += codings[PSEUDO_EOF].length();
 
-
-        compressedBits = 2 * BITS_PER_INT +  headerSize + encodedSize;
+        compressedBits = 2 * BITS_PER_INT + headerSize + encodedSize;
         bits.close();
         return ogBits - compressedBits;
         // return 0;
