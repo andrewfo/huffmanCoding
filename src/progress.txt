@@ -1,0 +1,30 @@
+1. create files
+- FairPriorityQueue.java
+- HuffmanTree.java
+- Compressor.java
+- Decompressor.java
+
+2. FairPriorityQueue<E extends Comparable<E>>
+enqueue(E item)      // insert in correct position, AFTER equal-priority items
+dequeue() -> E       // remove and return the minimum (front)
+peek() -> E          // look at minimum without removing
+size() -> int
+isEmpty() -> boolean
+- Sorted linked list probably the best - on enqueue, walk from front until there is an item
+with a greater
+
+3. HuffmanTree Skeleton
+// Constructor: takes frequency array (int[257]) -> builds the tree
+HuffmanTree(int[] frequencies, FairPriorityQueue)
+
+// Build tree from priority queue (dequeue 2, make parent, enqueue parent)
+buildTree(FairPriorityQueue<TreeNode>) -> TreeNode (root)
+
+// Generate codes by traversing tree (left=0, right=1)
+generateCodes() -> String[257]  // index = char value, value = bit string like "011"
+
+// For Standard Tree Format header
+flattenTree(TreeNode) -> bits to write  // preorder: internal=0, leaf=1+9bit value
+unflattenTree(BitInputStream) -> TreeNode  // reconstruct from flattened
+
+getRoot() -> TreeNode
