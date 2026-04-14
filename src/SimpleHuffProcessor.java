@@ -37,7 +37,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
      * count characters/create tree/store state so that
      * a subsequent call to compress will work. The InputStream
      * is <em>not</em> a BitInputStream, so wrap it int one as needed.
-     * 
+     *
      * @param in           is the stream which could be subsequently compressed
      * @param headerFormat a constant from IHuffProcessor that determines what kind
      *                     of
@@ -53,43 +53,64 @@ public class SimpleHuffProcessor implements IHuffProcessor {
      * @throws IOException if an error occurs while reading from the input file.
      */
     public int preprocessCompress(InputStream in, int headerFormat) throws IOException {
+        // Taking in either STF or SCF
         this.headerFormat = headerFormat;
+        // Reads the file n number of bits at a time (8)
         BitInputStream bits = new BitInputStream(in);
+        // Creates array of freqs
         counts = new int[ALPH_SIZE];
+        // Original bits on file
         ogBits = 0;
+        // Took in 8 bits
         int val = bits.readBits(BITS_PER_WORD);
 
+        // until no more bits to read
         while (val != -1) {
+            // Increases freq of that ascii val
             counts[val]++;
+            // Increase amt of total bits in file
             ogBits += BITS_PER_WORD;
+            // Next 8 bits
             val = bits.readBits(BITS_PER_WORD);
         }
 
+        // Create tree using the freqs we created
         huffTree = new HuffmanTree(counts);
+        // Get the String array for codes
         codings = huffTree.getCodings();
 
+        // Start to determine headersize
         int headerSize = 0;
+
         if (headerFormat == STORE_COUNTS) {
             headerSize = ALPH_SIZE * BITS_PER_INT;
         } else if (headerFormat == STORE_TREE) {
-            headerSize = BITS_PER_INT + huffTree.getFlattenedSize();
+            // Flattened tree size made up (32 for the tree, 10 * leafNodes + n-1 internal)
+            headerSize = BITS_PER_INT +  huffTree.getFlattenedTreeSize();
         } else {
-            bits.close();
             throw new IllegalArgumentException("cant calculate header size with STORE_CUSTOM");
         }
 
+        // Determine how much we encode
         int encodedSize = 0;
+        // For freq
         for (int i = 0; i < counts.length; i++) {
+            // If there is a coding for that freq
             if (codings[i] != null) {
+                // Add the total amount of time this code appears * its length (total bits)
                 encodedSize += counts[i] * codings[i].length();
             }
         }
+
+        // Add the PEOF bits
         encodedSize += codings[PSEUDO_EOF].length();
 
-        compressedBits = 2 * BITS_PER_INT + headerSize + encodedSize;
+        // Sum all bits in compressed file
+        compressedBits = 2 * BITS_PER_INT +  headerSize + encodedSize;
+
+        // Close input streams to avoid handling padding of 0's
         bits.close();
         return ogBits - compressedBits;
-        // return 0;
     }
 
     /**
@@ -98,7 +119,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
      * storing state used by this call.
      * <br>
      * pre: <code>preprocessCompress</code> must be called before this method
-     * 
+     *
      * @param in    is the stream being compressed (NOT a BitInputStream)
      * @param out   is bound to a file/stream to which bits are written
      *              for the compressed file (not a BitOutputStream)
@@ -118,7 +139,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     /**
      * Uncompress a previously compressed stream in, writing the
      * uncompressed bits/data to out.
-     * 
+     *
      * @param in  is the previously compressed data (not a BitInputStream)
      * @param out is the uncompressed file/stream
      * @return the number of bits written to the uncompressed file/stream

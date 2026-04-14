@@ -1,6 +1,7 @@
 public class HuffmanTree implements IHuffConstants {
     private TreeNode root;
     private String[] codings;
+    private int leafSize;
 
     public HuffmanTree(int[] counts) {
         FairPriorityQueue<TreeNode> pq = new FairPriorityQueue<>();
@@ -8,10 +9,13 @@ public class HuffmanTree implements IHuffConstants {
         for (int i = 0; i < counts.length; i++) {
             if (counts[i] > 0) {
                 pq.enqueue(new TreeNode(i, counts[i]));
+                leafSize++;
             }
         }
 
+
         pq.enqueue(new TreeNode(PSEUDO_EOF, 1));
+        leafSize++;
 
         while (pq.size() > 1) {
             TreeNode left = pq.dequeue();
@@ -36,19 +40,6 @@ public class HuffmanTree implements IHuffConstants {
         }
     }
 
-    public int getFlattenedSize() {
-        return getFlattenedSizeHelper(root);
-    }
-
-    private int getFlattenedSizeHelper(TreeNode node) {
-        if (node.isLeaf()) {
-            return 10;
-        } else {
-            return 1 + getFlattenedSizeHelper(node.getLeft())
-                    + getFlattenedSizeHelper(node.getRight());
-        }
-    }
-
     public String getCode(int value) {
         if (value < 0 || value >= codings.length) {
             return null;
@@ -62,6 +53,11 @@ public class HuffmanTree implements IHuffConstants {
 
     public TreeNode getRoot() {
         return root;
+    }
+
+    public int getFlattenedTreeSize() {
+        final int BITSPERLEAF = 10;
+        return BITSPERLEAF * leafSize + leafSize - 1;
     }
 
 }
