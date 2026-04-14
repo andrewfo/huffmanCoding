@@ -19,4 +19,6 @@ public class FairPriorityQueue<E extends Comparable<E>> {
         return con.removeFirst();
     }
 
+    
+
 }
