@@ -19,7 +19,7 @@ public class FairPriorityQueue<E extends Comparable<E>> {
         return con.removeFirst();
     }
 
-    public E peek(E val) {
+    public E peek() {
         return con.getFirst();
     }
 
