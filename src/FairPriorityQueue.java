@@ -19,6 +19,16 @@ public class FairPriorityQueue<E extends Comparable<E>> {
         return con.removeFirst();
     }
 
-    
+    public E peek(E val) {
+        return con.getFirst();
+    }
+
+    public int size() {
+        return con.size();
+    }
+
+    public boolean isEmpty() {
+        return con.isEmpty();
+    }
 
 }
