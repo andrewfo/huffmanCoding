@@ -13,7 +13,7 @@ public class HuffmanTree implements IHuffConstants {
 
         pq.enqueue(new TreeNode(PSEUDO_EOF, 1));
 
-        while (!pq.isEmpty()) {
+        while (pq.size() > 1) {
             TreeNode left = pq.dequeue();
             TreeNode right = pq.dequeue();
             TreeNode parent = new TreeNode(left, left.getFrequency() + right.getFrequency(), right);
@@ -36,18 +36,18 @@ public class HuffmanTree implements IHuffConstants {
         }
     }
 
-    public String getCode(int value){
-        if(value<0 || value >= codings.length){
+    public String getCode(int value) {
+        if (value < 0 || value >= codings.length) {
             return null;
         }
         return codings[value];
     }
 
-    public String[] getCodings(){
+    public String[] getCodings() {
         return codings;
     }
 
-    public TreeNode getRoot(){
+    public TreeNode getRoot() {
         return root;
     }
 
