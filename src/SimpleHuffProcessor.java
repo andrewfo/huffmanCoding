@@ -138,10 +138,10 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             throw new IllegalArgumentException("Cannot compress until preProcessCompress has been" +
                     " called.");
         }
-        BitInputStream bits = new BitInputStream(in);
-        BitOutputStream outBits = new BitOutputStream(out);
-        int written = 0;
         if (force || ogBits - compressedBits >= 0) {
+            BitInputStream bits = new BitInputStream(in);
+            BitOutputStream outBits = new BitOutputStream(out);
+            int written = 0;
             // Took in 8 bits
             int val = bits.readBits(BITS_PER_WORD);
             // until no more bits to read
@@ -155,11 +155,13 @@ public class SimpleHuffProcessor implements IHuffProcessor {
                     written++;
                 }
             }
-
+            bits.close();
+            outBits.close();
+            return written;
+        } else {
+            throw new RuntimeException("Error: No output file created. Failed to force or there " +
+                    "were no saved bits.");
         }
-        bits.close();
-        outBits.close();
-        return written;
     }
 
     /**
