@@ -142,19 +142,45 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             BitInputStream bits = new BitInputStream(in);
             BitOutputStream outBits = new BitOutputStream(out);
             int written = 0;
-            // Took in 8 bits
+
+            // Write magic number
+            outBits.writeBits(BITS_PER_INT, MAGIC_NUMBER);
+            written += BITS_PER_INT;
+
+            // Write header format
+            outBits.writeBits(BITS_PER_INT, headerFormat);
+            written += BITS_PER_INT;
+
+            // Write header data
+            if (headerFormat == STORE_COUNTS) {
+                for (int i = 0; i < ALPH_SIZE; i++) {
+                    outBits.writeBits(BITS_PER_INT, counts[i]);
+                    written += BITS_PER_INT;
+                }
+            } else if (headerFormat == STORE_TREE) {
+                outBits.writeBits(BITS_PER_INT, huffTree.getFlattenedTreeSize());
+                written += BITS_PER_INT;
+                written += writeFlattenedTree(huffTree.getRoot(), outBits);
+            }
+
+            // Encode file data
             int val = bits.readBits(BITS_PER_WORD);
-            // until no more bits to read
             while (val != -1) {
-                val = bits.readBits(BITS_PER_WORD);
-                String code = huffTree.getCode(val);
-                int write;
+                String code = codings[val];
                 for (int i = 0; i < code.length(); i++) {
-                    write = code.charAt(i) == '1' ? 1 : 0;
-                    outBits.writeBits(1, write);
+                    outBits.writeBits(1, code.charAt(i) == '1' ? 1 : 0);
                     written++;
                 }
+                val = bits.readBits(BITS_PER_WORD);
             }
+
+            // Write PSEUDO_EOF
+            String eofCode = codings[PSEUDO_EOF];
+            for (int i = 0; i < eofCode.length(); i++) {
+                outBits.writeBits(1, eofCode.charAt(i) == '1' ? 1 : 0);
+                written++;
+            }
+
             bits.close();
             outBits.close();
             return written;
@@ -175,12 +201,76 @@ public class SimpleHuffProcessor implements IHuffProcessor {
      *                     writing to the output file.
      */
     public int uncompress(InputStream in, OutputStream out) throws IOException {
-        throw new IOException("uncompress not implemented");
-        // return 0;
+        BitInputStream bits = new BitInputStream(in);
+        BitOutputStream outBits = new BitOutputStream(out);
+        int magic = bits.readBits(BITS_PER_INT);
+        if(magic != MAGIC_NUMBER){
+            throw new IllegalArgumentException("magic number not found");
+        }
+        int format = bits.readBits(BITS_PER_INT);
+        TreeNode root;
+        if(format == STORE_COUNTS){
+            int[] readCounts = new int[ALPH_SIZE];
+            for(int i = 0; i < ALPH_SIZE; i++){
+                readCounts[i] = bits.readBits(BITS_PER_INT);
+            }
+            root = new HuffmanTree(readCounts).getRoot();
+        } else {
+            int flatTreeSize = bits.readBits(BITS_PER_INT);
+            root = readFlattenedTree(bits);
+        }
+        int written = 0;
+        TreeNode curr = root;
+        boolean done = false;
+        while(!done){
+            int bit = bits.readBits(1);
+            if(bit == -1){
+                throw new IllegalArgumentException("No EOF found");
+            }
+            curr = (bit == 0) ? curr.getLeft() : curr.getRight();
+            if(curr.isLeaf()){
+                if(curr.getValue() == PSEUDO_EOF){
+                    done = true;
+                }else{
+                    outBits.writeBits(BITS_PER_WORD, curr.getValue());
+                    written += BITS_PER_WORD;
+                    curr = root;
+                }
+            }
+        }
+        bits.close();
+        outBits.close();
+        return written;
+    }
+
+    private TreeNode readFlattenedTree(BitInputStream bits) throws IOException{
+        int bit = bits.readBits(1);
+        if(bit == 1){
+            int value = bits.readBits(BITS_PER_WORD + 1);
+            return new TreeNode(value, 0);
+        }else{
+            TreeNode left = readFlattenedTree(bits);
+            TreeNode right = readFlattenedTree(bits);
+            return new TreeNode(left, 0, right);
+        }
     }
 
     public void setViewer(IHuffViewer viewer) {
         myViewer = viewer;
+    }
+
+    private int writeFlattenedTree(TreeNode node, BitOutputStream out) {
+        if (node.isLeaf()) {
+            out.writeBits(1, 1);
+            out.writeBits(BITS_PER_WORD + 1, node.getValue());
+            return 1 + BITS_PER_WORD + 1;
+        } else {
+            out.writeBits(1, 0);
+            int written = 1;
+            written += writeFlattenedTree(node.getLeft(), out);
+            written += writeFlattenedTree(node.getRight(), out);
+            return written;
+        }
     }
 
     private void showString(String s) {
