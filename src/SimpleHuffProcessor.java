@@ -31,6 +31,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     private int headerFormat;
     private int ogBits;
     private int compressedBits;
+    private boolean preCompressed;
 
     /**
      * Preprocess data so that compression is possible ---
@@ -86,7 +87,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             headerSize = ALPH_SIZE * BITS_PER_INT;
         } else if (headerFormat == STORE_TREE) {
             // Flattened tree size made up (32 for the tree, 10 * leafNodes + n-1 internal)
-            headerSize = BITS_PER_INT +  huffTree.getFlattenedTreeSize();
+            headerSize = BITS_PER_INT + huffTree.getFlattenedTreeSize();
         } else {
             throw new IllegalArgumentException("cant calculate header size with STORE_CUSTOM");
         }
@@ -110,6 +111,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
 
         // Close input streams to avoid handling padding of 0's
         bits.close();
+        preCompressed = true;
         return ogBits - compressedBits;
     }
 
@@ -132,8 +134,32 @@ public class SimpleHuffProcessor implements IHuffProcessor {
      *                     writing to the output file.
      */
     public int compress(InputStream in, OutputStream out, boolean force) throws IOException {
-        throw new IOException("compress is not implemented");
-        // return 0;
+        if (!preCompressed) {
+            throw new IllegalArgumentException("Cannot compress until preProcessCompress has been" +
+                    " called.");
+        }
+        BitInputStream bits = new BitInputStream(in);
+        BitOutputStream outBits = new BitOutputStream(out);
+        int written = 0;
+        if (force || ogBits - compressedBits >= 0) {
+            // Took in 8 bits
+            int val = bits.readBits(BITS_PER_WORD);
+            // until no more bits to read
+            while (val != -1) {
+                val = bits.readBits(BITS_PER_WORD);
+                String code = huffTree.getCode(val);
+                int write;
+                for (int i = 0; i < code.length(); i++) {
+                    write = code.charAt(i) == '1' ? 1 : 0;
+                    outBits.writeBits(1, write);
+                    written++;
+                }
+            }
+
+        }
+        bits.close();
+        outBits.close();
+        return written;
     }
 
     /**
