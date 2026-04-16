@@ -107,7 +107,7 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         encodedSize += codings[PSEUDO_EOF].length();
 
         // Sum all bits in compressed file
-        compressedBits = 2 * BITS_PER_INT +  headerSize + encodedSize;
+        compressedBits = 2 * BITS_PER_INT + headerSize + encodedSize;
 
         // Close input streams to avoid handling padding of 0's
         bits.close();
@@ -204,14 +204,14 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         BitInputStream bits = new BitInputStream(in);
         BitOutputStream outBits = new BitOutputStream(out);
         int magic = bits.readBits(BITS_PER_INT);
-        if(magic != MAGIC_NUMBER){
+        if (magic != MAGIC_NUMBER) {
             throw new IllegalArgumentException("magic number not found");
         }
         int format = bits.readBits(BITS_PER_INT);
         TreeNode root;
-        if(format == STORE_COUNTS){
+        if (format == STORE_COUNTS) {
             int[] readCounts = new int[ALPH_SIZE];
-            for(int i = 0; i < ALPH_SIZE; i++){
+            for (int i = 0; i < ALPH_SIZE; i++) {
                 readCounts[i] = bits.readBits(BITS_PER_INT);
             }
             root = new HuffmanTree(readCounts).getRoot();
@@ -222,16 +222,16 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         int written = 0;
         TreeNode curr = root;
         boolean done = false;
-        while(!done){
+        while (!done) {
             int bit = bits.readBits(1);
-            if(bit == -1){
+            if (bit == -1) {
                 throw new IllegalArgumentException("No EOF found");
             }
             curr = (bit == 0) ? curr.getLeft() : curr.getRight();
-            if(curr.isLeaf()){
-                if(curr.getValue() == PSEUDO_EOF){
+            if (curr.isLeaf()) {
+                if (curr.getValue() == PSEUDO_EOF) {
                     done = true;
-                }else{
+                } else {
                     outBits.writeBits(BITS_PER_WORD, curr.getValue());
                     written += BITS_PER_WORD;
                     curr = root;
@@ -243,12 +243,12 @@ public class SimpleHuffProcessor implements IHuffProcessor {
         return written;
     }
 
-    private TreeNode readFlattenedTree(BitInputStream bits) throws IOException{
+    private TreeNode readFlattenedTree(BitInputStream bits) throws IOException {
         int bit = bits.readBits(1);
-        if(bit == 1){
+        if (bit == 1) {
             int value = bits.readBits(BITS_PER_WORD + 1);
             return new TreeNode(value, 0);
-        }else{
+        } else {
             TreeNode left = readFlattenedTree(bits);
             TreeNode right = readFlattenedTree(bits);
             return new TreeNode(left, 0, right);
