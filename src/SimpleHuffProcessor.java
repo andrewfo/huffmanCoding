@@ -55,17 +55,20 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     public int preprocessCompress(InputStream in, int headerFormat) throws IOException {
         this.headerFormat = headerFormat;
         BitInputStream bits = new BitInputStream(in);
+        if (headerFormat != STORE_COUNTS && headerFormat != STORE_TREE) {
+            showError("Unsupported header format (custom format is not supported).");
+            bits.close();
+            return 0;
+        }
         counts = new int[ALPH_SIZE];
         getOgBits(bits);
         huffTree = new HuffmanTree(counts);
         codings = huffTree.getCodings();
-        int headerSize = 0;
+        int headerSize;
         if (headerFormat == STORE_COUNTS) {
             headerSize = ALPH_SIZE * BITS_PER_INT;
-        } else if (headerFormat == STORE_TREE) {
-            headerSize = BITS_PER_INT + huffTree.getFlattenedTreeSize();
         } else {
-            throw new IllegalArgumentException("cant calculate header size with STORE_CUSTOM");
+            headerSize = BITS_PER_INT + huffTree.getFlattenedTreeSize();
         }
         int encodedSize = 0;
         for (int i = 0; i < counts.length; i++) {
@@ -182,6 +185,12 @@ public class SimpleHuffProcessor implements IHuffProcessor {
             throw new IllegalArgumentException("magic number not found");
         }
         int format = bits.readBits(BITS_PER_INT);
+        if (format != STORE_COUNTS && format != STORE_TREE) {
+            showError("Unsupported header format in compressed file.");
+            bits.close();
+            outBits.close();
+            return 0;
+        }
         HuffmanTree tree = buildTree(bits, format);
         int written = tree.decodeTree(bits, outBits);
         bits.close();
@@ -209,6 +218,12 @@ public class SimpleHuffProcessor implements IHuffProcessor {
     private void showString(String s) {
         if (myViewer != null) {
             myViewer.update(s);
+        }
+    }
+
+    private void showError(String s) {
+        if (myViewer != null) {
+            myViewer.showError(s);
         }
     }
 }

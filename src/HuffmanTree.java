@@ -1,10 +1,35 @@
+/*  Student information for assignment:
+ *
+ *  On <MY|OUR> honor, <NAME1> (and <NAME2),
+ *  this programming assignment is <MY|OUR> own work
+ *  and <I|WE> have not provided this code to any other student.
+ *
+ *  Number of slip days used:
+ *
+ *  Student 1:
+ *  UTEID:
+ *  email address:
+ *
+ *  Student 2:
+ *  UTEID:
+ *  email address:
+ *
+ *  Grader name:
+ *  Section number:
+ */
+
 import java.io.IOException;
 
+/**
+ * Huffman code tree. Builds from a frequency array or a flattened-tree header,
+ * and supports producing codes and reading/writing the flattened tree format.
+ */
 public class HuffmanTree implements IHuffConstants {
     private TreeNode root;
     private String[] codings;
     private int leafSize;
 
+    /** Build a tree from the given frequency array (PEOF is added automatically). */
     public HuffmanTree(int[] counts) {
         FairPriorityQueue<TreeNode> pq = new FairPriorityQueue<>();
         for (int i = 0; i < counts.length; i++) {
@@ -26,12 +51,14 @@ public class HuffmanTree implements IHuffConstants {
         buildCodes(root, "");
     }
 
+    /** Build a tree by reading a flattened tree header from the given stream. */
     public HuffmanTree (BitInputStream bits) throws IOException {
         root = readFlattenedTree(bits);
         codings = new String[ALPH_SIZE + 1];
         buildCodes(root, "");
     }
 
+    /** Write the tree in flattened (STF) form and return the bits written. */
     public int writeFlattenedTree(BitOutputStream outBits) {
         return flattenedTreeHelper(root, outBits);
     }
@@ -74,6 +101,10 @@ public class HuffmanTree implements IHuffConstants {
         }
     }
 
+    /**
+     * Decode encoded bits from bits, writing original bytes to outBits until PEOF.
+     * @return the number of bits written to outBits.
+     */
     public int decodeTree(BitInputStream bits, BitOutputStream outBits) throws IOException {
         int written = 0;
         TreeNode curr = root;
@@ -97,10 +128,12 @@ public class HuffmanTree implements IHuffConstants {
         return written;
     }
 
+    /** Array of Huffman codes indexed by byte value (and PEOF). */
     public String[] getCodings() {
         return codings;
     }
 
+    /** Number of bits the flattened tree representation will occupy. */
     public int getFlattenedTreeSize() {
         final int BITSPERLEAF = 10;
         return BITSPERLEAF * leafSize + leafSize - 1;
