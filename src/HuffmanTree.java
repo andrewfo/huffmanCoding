@@ -1,3 +1,5 @@
+import java.io.IOException;
+
 public class HuffmanTree implements IHuffConstants {
     private TreeNode root;
     private String[] codings;
@@ -5,28 +7,60 @@ public class HuffmanTree implements IHuffConstants {
 
     public HuffmanTree(int[] counts) {
         FairPriorityQueue<TreeNode> pq = new FairPriorityQueue<>();
-        // leaf nodes
         for (int i = 0; i < counts.length; i++) {
             if (counts[i] > 0) {
                 pq.enqueue(new TreeNode(i, counts[i]));
                 leafSize++;
             }
         }
-
-
         pq.enqueue(new TreeNode(PSEUDO_EOF, 1));
         leafSize++;
-
         while (pq.size() > 1) {
             TreeNode left = pq.dequeue();
             TreeNode right = pq.dequeue();
-            TreeNode parent = new TreeNode(left, left.getFrequency() + right.getFrequency(), right);
+            TreeNode parent = new TreeNode(left, -1, right);
             pq.enqueue(parent);
         }
         root = pq.dequeue();
         codings = new String[ALPH_SIZE + 1];
         buildCodes(root, "");
+    }
 
+    public HuffmanTree (BitInputStream bits) throws IOException {
+        root = readFlattenedTree(bits);
+        codings = new String[ALPH_SIZE + 1];
+        buildCodes(root, "");
+    }
+
+    public int writeFlattenedTree(BitOutputStream outBits) {
+        return flattenedTreeHelper(root, outBits);
+    }
+
+    private int flattenedTreeHelper(TreeNode node, BitOutputStream out) {
+        if (node.isLeaf()) {
+            out.writeBits(1, 1);
+            out.writeBits(BITS_PER_WORD + 1, node.getValue());
+            return 1 + BITS_PER_WORD + 1;
+        } else {
+            out.writeBits(1, 0);
+            int written = 1;
+            written += flattenedTreeHelper(node.getLeft(), out);
+            written += flattenedTreeHelper(node.getRight(), out);
+            return written;
+        }
+    }
+
+    private TreeNode readFlattenedTree(BitInputStream bits) throws IOException {
+        int bit = bits.readBits(1);
+        if (bit == 1) {
+            int value = bits.readBits(BITS_PER_WORD + 1);
+            leafSize++;
+            return new TreeNode(value, 0);
+        } else{
+            TreeNode left = readFlattenedTree(bits);
+            TreeNode right = readFlattenedTree(bits);
+            return new TreeNode(left, 0, right);
+        }
     }
 
     private void buildCodes(TreeNode node, String path) {
@@ -40,19 +74,31 @@ public class HuffmanTree implements IHuffConstants {
         }
     }
 
-    public String getCode(int value) {
-        if (value < 0 || value >= codings.length) {
-            return null;
+    public int decodeTree(BitInputStream bits, BitOutputStream outBits) throws IOException {
+        int written = 0;
+        TreeNode curr = root;
+        boolean done = false;
+        while (!done) {
+            int bit = bits.readBits(1);
+            if (bit == -1) {
+                throw new IllegalArgumentException("No EOF found");
+            }
+            curr = (bit == 0) ? curr.getLeft() : curr.getRight();
+            if (curr.isLeaf()) {
+                if (curr.getValue() == PSEUDO_EOF) {
+                    done = true;
+                } else {
+                    outBits.writeBits(BITS_PER_WORD, curr.getValue());
+                    written += BITS_PER_WORD;
+                    curr = root;
+                }
+            }
         }
-        return codings[value];
+        return written;
     }
 
     public String[] getCodings() {
         return codings;
-    }
-
-    public TreeNode getRoot() {
-        return root;
     }
 
     public int getFlattenedTreeSize() {
