@@ -1,18 +1,18 @@
 /*  Student information for assignment:
  *
- *  On <MY|OUR> honor, <NAME1> (and <NAME2),
- *  this programming assignment is <MY|OUR> own work
- *  and <I|WE> have not provided this code to any other student.
+ *  On our honor, David and Andrew,
+ *  this programming assignment is our own work
+ *  and we have not provided this code to any other student.
  *
- *  Number of slip days used:
+ *  Number of slip days used: 1
  *
- *  Student 1:
- *  UTEID:
- *  email address:
+ *  Student 1: Andrew Ma
+ *  UTEID: azm484
+ *  email address: azm484@eid.utexas.edu
  *
- *  Student 2:
- *  UTEID:
- *  email address:
+ *  Student 2: David Toghanro
+ *  UTEID: dt28755
+ *  email address: dt28755@eid.utexas.edu
  *
  *  Grader name:
  *  Section number:
